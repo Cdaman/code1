@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf8">
+	<title> Rapahel test </title>
+
+	<script type="text/javascript" src="raphael.js">
+	</script>
+</head>
+
+<body>
+	 <script type="text/javascript">
+	 //create the canvas, which all the shapes are on
+	 var paper = Raphael(0,0,500,500);
+
+     ballpath = '';
+     ballNum = 0;
+
+     //the paths the ball will follow, one at a time, starting from 0. which is the first in an array.
+     paths = ["M480, 180L35, 180", "M35, 180L480, 325", "M480, 325L35, 110", "M35, 110L480, 50", "M480, 50L35, 340",  "M35, 340L480, 340", "M480, 340L35, 200", "M35, 200L35, 200"];
+	 Raphael(function () {
+
+            ballpath = paper.path(paths[ballNum]).attr({stroke: "#0000ff", opacity: .3, "stroke-width": 0});
+            var ball = paper.circle(0, 0, 5).attr("fill", "rgba(255, 0, 0, 1)");
+	 		
+			//the length variable (and arribute)
+	        var len = ballpath.getTotalLength();
+	      
+
+	        ball.onAnimation(function () {
+	            var t = this.attr("transform");
+	        });
+   
+            paper.customAttributes.along = function (v) {
+                var point = ballpath.getPointAtLength(v * len);
+                return {
+                    transform: "t" + [point.x, point.y] + "r" + point.alpha
+                };
+            };
+
+            ball.attr({along: 0});
+
+            //the variable rotateAlongThePath is true
+            var rotateAlongThePath = true;
+
+            //th function that actually makes the ball move
+            function run() {
+                //the path which the wall will follow
+                wallpath = paper.path("M480, 180L480, 380, M480, 380L480, 60, M480, 60L480, 340").attr({stroke: "#0000ff", opacity: .3, "stroke-width": 1});
+                    //create a rectangle
+	 			   var wall2 = paper.rect(0 - 50, 0 - 9, 100, 20).attr("fill", "rgba(0, 0, 255, 1)");
+
+	 			  //the length variable (and arribute)
+	       	 	  var wallLen = wallpath.getTotalLength();
+                  //not sure aout these commands, they are to do with animation paths
+	       	 	  wall2.onAnimation(function () {
+	            	var t = this.attr("transform");
+	       		});
+   
+            	paper.customAttributes.along2 = function (v2) {
+                	var point2 = wallpath.getPointAtLength(v2 * wallLen);
+                	return {
+                    	transform: "t" + [point2.x, point2.y] + "r" + point2.alpha
+                	};
+            	};
+                    //set the wall's movemnt to 0
+            		wall2.attr({along2: 0});
+
+
+                    var collision = function(){
+
+                        //find the paddle's height and width, the ball's center point, and AI Paddle's x position
+                        var paddleheight = Math.round(paddle.getBBox().y + paddle.getBBox().height / 2);
+                        var paddleWidth = Math.round(paddle.getBBox().x + paddle.getBBox().width / 2);
+                        var ballcenterpoint = Math.round(ball.getBBox().y + ball.getBBox().height / 2);
+                        var AIpaddle = Math.round(wall2.getBBox().x + wall2.getBBox().width / 2);
+
+                        //the height from the center point of the paddle to the edge (heigh variance), finding the height of the  top edge of the boundingbox (where the ball will colide with) by adding the centerpoint and height variance. finding the bottom edge by subtracting the centerpoint from the bounding box. 
+                        var heightvariance = pHeight;
+                        var heightPlusboundingbox = paddleheight + heightvariance;
+                        var heightMinusboundingbox = paddleheight - heightvariance;
+
+                        //if the edge of the box is less than or equal to the center of the ball.
+
+                        var balledge = Math.round(ball.getBBox().x + (ball.getBBox().width / 2) + 22);
+
+                        //continue ballbounce is used for the if below; it equals: if the ball center is largerthan or equal to the height of the paddle minus its bounding box AND the center point is equal to or less than the height of the paddle plus the bounding box AND the center is equal to or greater than the width (extending the detected edge ofthe box by a few pixels so as to fix some collision problems) the if below will work. 
+                        if(ballcenterpoint >= heightMinusboundingbox && ballcenterpoint <= heightPlusboundingbox || balledge >= AIpaddle){
+                                //if the ball number is less than or equal to 6 it will increase theball number by one an change the ballpath to one in the array called paths[ballNum], the ball will then begin at the beginning of that path and be animated along it
+                                if(ballNum <= 6){
+                                    ballNum++
+                                    ballpath = paper.path(paths[ballNum]).attr({stroke: "#0000ff", opacity: .3, "stroke-width": 0});
+                                    ball.attr({along: 0});
+                                    ball.animate({along: 1}, 2500, onanimationdone);
+                                }
+                                //if the ballNum is greater than 6 it will remove the ball (fixin the error of an infinite loop of theball just sitting the corner acting all boring and doing nothing)
+                        }
+                        else {
+                           // ball.remove(); //- YOU LOSE
+                        };
+                    };
+
+                    //animates the wall
+                    wall2.animate({along2: 1}, 16200,  function () {
+                });
+
+                    //loops through all the ball paths
+                    var onanimationdone = function () {
+                            collision();
+                    };
+
+                    ball.animate({along: 1}, 2500, onanimationdone);
+                    ball.attr({along: 0});
+            };
+
+            //create a rectangles
+            var pHeight = 100;
+            var pWidth = 20;
+			var paddle = paper.rect(10, 130, pWidth, pHeight);
+			paddle.attr("fill", "rgba(0, 0, 255, 1)");
+
+            var start = function () {
+                // storing original coordinates
+                this.originalY = this.attr("y");
+                this.attr({opacity: 0.9});
+            },
+            move = function (dx, dy) {
+                // moves the object up and down, when clicked and dragged
+                this.attr({y: this.originalY + dy});
+            },
+            up = function () {
+                // restoring state
+                this.attr({opacity: 1.0});
+            };
+            //runs the functions
+            paddle.drag(move, start, up);
+            run();
+        });
+
+	 </script>
+</body
+</html>
